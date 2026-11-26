@@ -18,7 +18,7 @@ RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON -DGGML_CUDA_GR
 
 FROM nvidia/cuda:12.8.0-runtime-ubuntu24.04
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      curl ca-certificates \
+      curl ca-certificates libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /src/build /opt/speech/build
 COPY entrypoint.sh /opt/speech/entrypoint.sh
