@@ -1,6 +1,7 @@
 #!/bin/sh
 # 起動時にモデル（small-IQ3_XXS, 約9.8GB）を Hugging Face から取得してから
 # speech serve（OpenAI互換の音声API, POST /v1/audio/speech）を起動する。
+# Salad には永続ストレージが無いため、起動のたびに取得する（画像側 krea2 のマニフェスト方式と同じ考え方）。
 set -eu
 
 MODEL_NAME="Drama-35B-A3B-Japanese-v3-small-IQ3_XXS"
@@ -24,13 +25,20 @@ if [ ! -f "${SIDECAR_FILE}" ]; then
   curl -L --fail --retry 3 -o "${SIDECAR_FILE}" "${BASE_URL}/${MODEL_NAME}.gguf.json"
 fi
 
+VOICE_ARGS=""
+if [ -n "${CAST_URL:-}" ]; then
+  echo "[entrypoint] downloading cast voice file..."
+  curl -L --fail --retry 3 -o "${MODEL_DIR}/cast.voice.gguf" "${CAST_URL}"
+  VOICE_ARGS="--add-voice cast=${MODEL_DIR}/cast.voice.gguf"
+fi
+
 echo "[entrypoint] starting speech serve on port ${PORT} (device ${DEVICE})"
 # exec せず終了コードをログに残す。終了後はコンテナを生かしてログを読めるようにする。
 set +e
 /opt/speech/build/speech serve "${MODEL_FILE}" \
   --device "${DEVICE}" \
   --host 0.0.0.0 \
-  --port "${PORT}"
+  --port "${PORT}" ${VOICE_ARGS}
 code=$?
 echo "[entrypoint] speech serve exited with code ${code}"
 sleep infinity
