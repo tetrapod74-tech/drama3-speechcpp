@@ -32,6 +32,20 @@ if [ -n "${CAST_URL:-}" ]; then
   VOICE_ARGS="--add-voice cast=${MODEL_DIR}/cast.voice.gguf"
 fi
 
+if [ -n "${VOICES_BASE:-}" ]; then
+  mkdir -p "${MODEL_DIR}/voices"
+    for pair in \
+        "00_narration:narration" "01_yuta:yuta" "02_kei:kei" "03_saki:saki" \
+            "04_suzuka:suzuka" "05_ai:ai" "06_reina:reina" "07_ruri:ruri" \
+                "08_misuzu:misuzu" "09_nana:nana" "10_iroha:iroha" "11_sumika:sumika"; do
+                    file="${pair%%:*}"
+                        name="${pair##*:}"
+                            echo "[entrypoint] downloading voice ${name}..."
+                                curl -L --fail --retry 3 -o "${MODEL_DIR}/voices/${file}.voice.gguf" "${VOICES_BASE}/${file}.voice.gguf"
+                                    VOICE_ARGS="${VOICE_ARGS} --add-voice ${name}=${MODEL_DIR}/voices/${file}.voice.gguf"
+                                      done
+                                      fi
+
 echo "[entrypoint] starting speech serve on port ${PORT} (device ${DEVICE})"
 # exec せず終了コードをログに残す。終了後はコンテナを生かしてログを読めるようにする。
 set +e
