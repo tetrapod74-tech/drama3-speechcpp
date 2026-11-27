@@ -2,6 +2,8 @@
 # speech.cpp v0.11.2 + drama3-speechcpp-fast.patch (fetched from the GGUF pack repo, sha256-checked)
 # Build runs on GitHub Actions -> GHCR. The image contains no secrets;
 # the model is downloaded from Hugging Face at container start (see entrypoint.sh).
+# CPU code is built portable (GGML_NATIVE=OFF, AVX2 baseline) so the binary
+# also runs on older host CPUs without AVX-512 (2026-11-27).
 
 FROM nvidia/cuda:12.8.0-devel-ubuntu24.04 AS build
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -13,7 +15,7 @@ RUN curl -L --fail -o /tmp/fast.patch \
       "https://huggingface.co/StudioYebisu-ship-it/Drama-3-Japanese-speech-cpp-gguf/resolve/main/drama3-speechcpp-fast.patch" \
     && echo "1d9c7c25928f1cc9000dd7bb5ff258652911d3cf1537a5847605281ab761e65f  /tmp/fast.patch" | sha256sum -c - \
     && git apply /tmp/fast.patch
-RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON -DGGML_CUDA_GRAPHS=ON \
+RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON -DGGML_CUDA_GRAPHS=ON -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DGGML_AVX512=OFF -DGGML_FMA=ON -DGGML_F16C=ON \
     && cmake --build build --target speech speech-cli -j"$(nproc)"
 
 FROM nvidia/cuda:12.8.0-runtime-ubuntu24.04
